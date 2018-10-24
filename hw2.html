@@ -93,7 +93,7 @@
     menu_year.on('change', function(d) {
       selected_year = menu_year.property('value');
       console.log(selected_year);
-      selected = data.filter(d => d.year == selected_year);
+      selected_data = data.filter(d => d.year == selected_year);
       console.log(selected_data);
     });
 
