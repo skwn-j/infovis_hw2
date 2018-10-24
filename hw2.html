@@ -7,9 +7,17 @@
   </style>
 </head>
 <body>
-  <div id='menu'>
+  <div id= 'title'>
   </div>
-  <div id='wrapper' style = 'display:inline'>
+  <div id='menu'>
+    <select id = 'menu_year' style = 'display:inline_block;float:left'> </select>
+    <p id = 'selected_year'></p>
+    <select id = 'menu_wrdg' style = 'display:inline_block;float:left'> </select>
+    <p id = 'selected_year'></p>
+    <select id = 'menu_wdl' style = 'display:inline_block;float:left'> </select>
+    <p id = 'selected_year'></p>
+  </div>
+  <div id='wrapper' style='float:initial'>
     <div id= 'table'style = 'display:inline;float:left'></div>
     <div id= 'line'style = 'display:inline;float:left'></div>
     <div id= 'bar'style = 'display:inline;float:left'></div>
@@ -17,73 +25,91 @@
   
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script>
-    function translate(x, y) {
-      return 'translate(' + x + ',' + y + ')';
-    }
-    d3.json("data.json", function(data) {
-      let str_data = JSON.stringify(data);
+  
+
+
+
+    //default values
+    let data = [];
     let svgWidth = 550;
     let svgHeight = 550;
     let margin = {top: 30, right: 10, bottom: 20, left: 40, mid: 10};
     let width = svgWidth - margin.left - margin.right;
     let height = svgHeight - margin.top - margin.bottom;
-    
-    
+    function translate(x, y) {
+      return 'translate(' + x + ',' + y + ')';
+    }
 
-    //domains of each menu
-    let table_domain = [];
-    data.forEach(function(value, index, array) {
-      table_domain.push(data[index].year);
-    });
-    let line_domain = ['WR', 'DG'];
-    let bar_domain = ['W', 'D', 'L'];
-    
     //current options
-    let selected_table = 1982;
-    let selected_line = 'win_rate';
-    let selected_bar = 'W';
+    let selected_year = 1982;
+    let selected_wrdg = 'win_rate';
+    let selected_wdl = 'W';
 
     //initiate dropdown menu
-    let menu_table = d3.select('#menu').append('select');
-    let menu_line = d3.select('#menu').append('select');
-    let menu_bar = d3.select('#menu').append('select');
-    menu_table.selectAll('option')
-      .data(table_domain)
-      .enter()
-      .append('option')
-      .attr('value', d => d)
-      .text(d => d);
-    menu_line.selectAll('option')
-      .data(line_domain)
-      .enter()
-      .append('option')
-      .attr('value', d => d)
-      .text(d => d);
-    menu_bar.selectAll('option')
-      .data(bar_domain)
-      .enter()
-      .append('option')
-      .attr('value', d => d)
-      .text(d => d);
+    let menu_year = d3.select('#menu_year');
+    let menu_wrdg = d3.select('#menu_wrdg');
+    let menu_wdl = d3.select('#menu_wdl');
+    //initialize data
 
-    let target_data = data[0];
-    let target_bar = target_data
+    let year_domain = [];
+    let line_domain = ['WR', 'DG'];
+    let bar_domain = ['W', 'D', 'L'];
+
+    function init() {
+      console.log('init');
+      d3.json("data.json").then(d=> {
+        data = d
+        data.forEach(function(d) {
+          year_domain.push(+d.year);
+        });
+        console.log(year_domain);
+
+        menu_year.selectAll('option')
+        .data(year_domain)
+        .enter()
+        .append('option')
+        .attr('value', d => d)
+        .text(d => d);
+        
+      menu_wrdg.selectAll('option')
+        .data(line_domain)
+        .enter()
+        .append('option')
+        .attr('value', d => d)
+        .text(d => d);
+
+      menu_wdl.selectAll('option')
+        .data(bar_domain)
+        .enter()
+        .append('option')
+        .attr('value', d => d)
+        .text(d => d);
+      });
+    }
+    init();
+
+    let selected_data = data[0];
     //change event handler
-    menu_table.on('change', function(d) {
-      selected_table = this.node().value;
-      target_data = data.filter(d => d.year == selected);
+    menu_year.on('change', function(d) {
+      selected_year = menu_year.property('value');
+      console.log(selected_year);
+      selected = data.filter(d => d.year == selected_year);
+      console.log(selected_data);
     });
 
-    menu_line.on('change', function(d) {
-      selected_line = this.node().value;
-      
+    menu_wrdg.on('change', function(d) {
+      selected = menu_wrdg.property('value');
     });
 
-    menu_bar.on('change', function(d) {
-      selected_bar = this.node().value;
+    menu_wdl.on('change', function(d) {
+      selected = menu_wdl.property('value');
      
     });
 
+    function visualize() {
+
+    }
+    visualize();
     
 
 
@@ -95,7 +121,7 @@
     .attr('height', svgHeight)
     .append('g')
     .attr('transform', translate(margin.left, margin.top));
-
+   
     svg_t.selectAll('text')
     .data(table_column)
     .enter()
@@ -115,7 +141,7 @@
     .attr('transform', translate(margin.left, margin.top));
 
     svg_l.selectAll('text')
-    .data([str_data])
+    .data(['hello'])
     .enter()
     .append('text')
     .text(d => d);
@@ -137,9 +163,6 @@
     .attr('height', d=>d.)
     .style('fill', (d, i) => colorScale(i));
     */
-    });
-
-    
     
   </script>
 </body>
