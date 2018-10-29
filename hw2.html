@@ -9,18 +9,18 @@
 <body>
   <div id= 'title'>
   </div>
-  <div id='menu'>
-    <select id = 'menu_year' style = 'display:inline_block;float:left'> </select>
+  <div id='menu' style ='display: block'>
+    <select id = 'menu_year' style = 'display:inline_block'> </select>
     <p id = 'selected_year'></p>
-    <select id = 'menu_wrdg' style = 'display:inline_block;float:left'> </select>
+    <select id = 'menu_wrdg' style = 'display:inline_block'> </select>
     <p id = 'selected_year'></p>
-    <select id = 'menu_wdl' style = 'display:inline_block;float:left'> </select>
+    <select id = 'menu_wdl' style = 'display:inline_block'> </select>
     <p id = 'selected_year'></p>
   </div>
-  <div id='wrapper' style='float:initial'>
-    <div id= 'table'style = 'display:inline;float:left'></div>
-    <div id= 'line'style = 'display:inline;float:left'></div>
-    <div id= 'bar'style = 'display:inline;float:left'></div>
+  <div id='wrapper' style='display:block'>
+    <div id= 'table'style = 'display:inline_block'></div>
+    <div id= 'line'style = 'display:inline'> </div>
+    <div id= 'bar'style = 'display:inline'> </div>
   </div>
   
   <script src="https://d3js.org/d3.v5.min.js"></script>
@@ -40,7 +40,9 @@
       return 'translate(' + x + ',' + y + ')';
     }
 
+
     //current options
+    let selected_data = [];
     let selected_year = 1982;
     let selected_wrdg = 'win_rate';
     let selected_wdl = 'W';
@@ -55,83 +57,8 @@
     let line_domain = ['WR', 'DG'];
     let bar_domain = ['W', 'D', 'L'];
 
-    function init() {
-      console.log('init');
-      d3.json("data.json").then(d=> {
-        data = d
-        data.forEach(function(d) {
-          year_domain.push(+d.year);
-        });
-        console.log(year_domain);
-
-        menu_year.selectAll('option')
-        .data(year_domain)
-        .enter()
-        .append('option')
-        .attr('value', d => d)
-        .text(d => d);
-        
-      menu_wrdg.selectAll('option')
-        .data(line_domain)
-        .enter()
-        .append('option')
-        .attr('value', d => d)
-        .text(d => d);
-
-      menu_wdl.selectAll('option')
-        .data(bar_domain)
-        .enter()
-        .append('option')
-        .attr('value', d => d)
-        .text(d => d);
-      });
-    }
-    init();
-
-    let selected_data = data[0];
-    //change event handler
-    menu_year.on('change', function(d) {
-      selected_year = menu_year.property('value');
-      console.log(selected_year);
-      selected_data = data.filter(d => d.year == selected_year);
-      console.log(selected_data);
-    });
-
-    menu_wrdg.on('change', function(d) {
-      selected = menu_wrdg.property('value');
-    });
-
-    menu_wdl.on('change', function(d) {
-      selected = menu_wdl.property('value');
-     
-    });
-
-    function visualize() {
-
-    }
-    visualize();
-    
-
-
     //table
-    let table_column = ['rank', 'team', 'W', 'D', 'L', 'win_rate', 'diff_game'];
-    let svg_t = d3.select('#table')
-    .append('svg')
-    .attr('width', svgWidth)
-    .attr('height', svgHeight)
-    .append('g')
-    .attr('transform', translate(margin.left, margin.top));
-   
-    svg_t.selectAll('text')
-    .data(table_column)
-    .enter()
-    .append('text')
-    .text(d => d)
-    .attr('x', (d, i) =>  i*(svgWidth/table_column.length))
-    //.attr('font-family', 'sans-serif')
-    //.attr('font-size', '11px')
-    .attr('fill', 'black')
-    .attr('text-anchor', 'middle');
+    
 
     let svg_l = d3.select('#line')
     .append('svg')
@@ -163,7 +90,125 @@
     .attr('height', d=>d.)
     .style('fill', (d, i) => colorScale(i));
     */
+
+
     
+
+    function init_table(selected_data) {
+      let keys = ['rank', 'team', 'W', 'D', 'L', 'win_rate', 'diff_game'];
+      let svg_t = d3.select('#table').append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', translate(margin.left, margin.top));
+
+      let thead = svg_t.selectAll('text').append('g').data(keys).classed('thead', true);
+      
+      thead.enter()
+      .append('text')
+      .text(d => d)
+      .attr('x', (d, i) =>  i*(svgWidth/keys.length))
+      .attr('fill', 'black')
+      .attr('text-anchor', 'middle');
+
+      let rows = svg_t.selectAll('.row').data(selected_data.rankings);
+      let tc = rows.enter()
+        .append('g')
+        .attr('transform', (d, i) => translate(0, 30*(i+1)))
+        .attr('class', 'row')
+        .selectAll('text')
+        .data((d,i) => Object.entries(d));
+
+      tc.enter().append('text')
+      .text(d=> d[1])
+      .attr('x', (d,i) => i*(svgWidth/keys.length))
+      .attr('fill', 'black');
+      
+      
+
+      /*
+      tc.enter()
+      .append('text')
+      .text(d => d[1])
+      .attr('x', (d, i) =>  i*(svgWidth/keys.length))
+      .attr('fill', 'black');
+      console.log(tc);
+      */
+    }
+
+    function init_line() {
+
+    }
+
+    function init_bar() {
+
+    }
+
+    function init() {
+      console.log('init');
+      d3.json("data.json").then(d=> {
+        data = d
+        data.forEach(function(d) {
+          year_domain.push(+d.year);
+        });
+      
+        menu_year.selectAll('option')
+        .data(year_domain)
+        .enter()
+        .append('option')
+        .attr('value', d => d)
+        .text(d => d);
+        
+        menu_wrdg.selectAll('option')
+        .data(line_domain)
+        .enter()
+        .append('option')
+        .attr('value', d => d)
+        .text(d => d);
+
+        menu_wdl.selectAll('option')
+        .data(bar_domain)
+        .enter()
+        .append('option')
+        .attr('value', d => d)
+        .text(d => d);
+        selected_data = data[0];
+
+        init_table(selected_data);
+        init_line();
+        init_bar();
+      
+      });
+    }
+    init();
+
+
+    //change event handler
+    menu_year.on('change', function(d) {
+      selected_year = menu_year.property('value');
+      console.log(selected_year);
+      selected_data = data.filter(d => d.year == selected_year);
+      console.log(selected_data);
+    });
+
+    menu_wrdg.on('change', function(d) {
+      selected_wrdg = menu_wrdg.property('value');
+      console.log(selected_wrdg);
+    });
+
+    menu_wdl.on('change', function(d) {
+      selected_wdl = menu_wdl.property('value');
+      console.log(selected_wdl);
+    });
+
+    function visualize() {
+
+    }
+    visualize();
+    
+
+
+        
   </script>
 </body>
 </html>
