@@ -1,48 +1,53 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <title>Infovis HW2</title>
   <style>
   </style>
 </head>
+
 <body>
-  <div id= 'title'>
+  <div id='title'>
   </div>
-  <div id='menu' style ='display: block'>
-    <select id = 'menu_year' style = 'display:inline_block'> </select>
-    <p id = 'selected_year'></p>
-    <select id = 'menu_wrdg' style = 'display:inline_block'> </select>
-    <p id = 'selected_year'></p>
-    <select id = 'menu_wdl' style = 'display:inline_block'> </select>
-    <p id = 'selected_year'></p>
+  <div id='menu' style='display: block'>
+    <select id='menu_year' style='display:inline_block'> </select>
+    <p id='selected_year'></p>
+    <select id='menu_wrdg' style='display:inline_block'> </select>
+    <p id='selected_year'></p>
+    <select id='menu_wdl' style='display:inline_block'> </select>
+    <p id='selected_year'></p>
   </div>
   <div id='wrapper' style='display:inline_block;'>
-    <div id= 'table'style = 'display:inline_block; float:left'></div>
-    <div id= 'line'style = 'display:inline_block; float:left'> </div>
-    <div id= 'bar'style = 'display:inline; float:left'> </div>
+    <div id='table' style='display:inline_block; float:left'></div>
+    <div id='line' style='display:inline_block; float:left'> </div>
+    <div id='bar' style='display:inline; float:left'> </div>
   </div>
-  
+
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script>
-  
-
-
-
     //default values
     let data = [];
     let svgWidth = 550;
     let svgHeight = 550;
-    let margin = {top: 30, right: 30, bottom: 20, left: 20, mid: 10};
+    let margin = {
+      top: 30,
+      right: 30,
+      bottom: 20,
+      left: 20,
+      mid: 10
+    };
     let width = svgWidth - margin.left - margin.right;
     let height = svgHeight - margin.top - margin.bottom;
+
     function translate(x, y) {
       return 'translate(' + x + ',' + y + ')';
     }
 
 
     //current options
-    let selected_data = [];
+    let selected_rankings = [];
     let selected_year = 1982;
     let selected_wrdg = 'win_rate';
     let selected_wdl = 'W';
@@ -56,31 +61,31 @@
     let year_domain = [];
     let line_domain = ['WR', 'DG'];
     let bar_domain = ['W', 'D', 'L'];
-
+    let line_data = []
     //table
     let keys = ['rank', 'team', 'W', 'D', 'L', 'win_rate', 'diff_game'];
-    
+
     let svg_t = d3.select('#table').append('svg')
       .attr('width', svgWidth)
       .attr('height', svgHeight)
       .append('g')
       .attr('transform', translate(margin.left, margin.top));
-    
+
 
     let svg_l = d3.select('#line')
-    .append('svg')
-    .attr('width', svgWidth)
-    .attr('height', svgHeight)
-    .append('g')
-    .attr('transform', translate(margin.left, margin.top));
+      .append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', translate(margin.left, margin.top));
 
     let colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     let svg_b = d3.select('#bar')
-    .append('svg')
-    .attr('width', svgWidth)
-    .attr('height', svgHeight)
-    .append('g')
-    .attr('transform', translate(margin.left, margin.top));
+      .append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', translate(margin.left, margin.top));
 
     /*
     svg_b.selectAll('rect')
@@ -93,60 +98,70 @@
     */
 
 
-    
+
 
     function init_table() {
-        let thead = svg_t.selectAll('text').append('g').data(keys).classed('thead', true);
-      
+      let thead = svg_t.selectAll('text').append('g').data(keys).classed('thead', true);
+
       thead.enter()
-      .append('text')
-      .text(d => d)
-      .attr('x', (d, i) =>  i*(svgWidth/keys.length))
-      .attr('fill', 'black')
-      .attr('text-anchor', 'middle');
-
-     
-    }
-
-    function draw_table(selected_data) {
-
-        let rows = svg_t.selectAll('.row').data(selected_data.rankings);
-        let tc = rows.enter()
-            .append('g')
-            .attr('transform', (d, i) => translate(0, 30*(i+1)))
-            .attr('class', 'row')
-            .selectAll('text')
-            .data(d => keys.map(thiskey => [thiskey, d[thiskey]]), tuple => tuple[0]);
-
-        tc.enter().append('text')
-        .text(d=> d[1])
-        .attr('x', (d,i) => i*(svgWidth/keys.length))
+        .append('text')
+        .text(d => d)
+        .attr('x', (d, i) => i * (svgWidth / keys.length))
         .attr('fill', 'black')
         .attr('text-anchor', 'middle');
+
+
+    }
+
+    function draw_table() { 
+      console.log(selected_rankings);
+      let rows = svg_t.selectAll('.row').data(selected_rankings);
+      let tc = rows.enter()
+        .append('g')
+        .merge(rows)
+        .attr('transform', (d, i) => translate(0, 30 * (i + 1)))
+        .attr('class', 'row')
+        .selectAll('text')
+        .data(d => keys.map(thiskey => [thiskey, d[thiskey]]), tuple => tuple[0]);
+
+      tc.enter().append('text')
+        .merge(tc)
+        .text(d => d[1])
+        .attr('x', (d, i) => i * (svgWidth / keys.length))
+        .attr('fill', 'black')
+        .attr('text-anchor', 'middle');
+
+      let t = d3.transition().duration(500);
+      rows
+        .transition(t);
+
+      rows.exit().transition(t).remove();
     }
 
 
     function draw_line() {
-        console.log(selected_wrdg);
-    
-        let lx = d3.scaleBand()
-            .domain(year_domain)
-            .range([0, width]);
-        let ly = d3.scaleLinear()
-            .domain([
-                d3.min(data, d=>d.rankings.win_rate),
-                d3.min(data, d=>d.rankings.win_rate)
-                ])
-            .range([height, 0]);
+      //console.log(line_data);
 
-         let pxAxis =
-            svg_l
-            .append('g')
-            .attr('class', 'xAxis')
-            .attr('transform', translate(0, height))
-            .call(d3.axisBottom(lx));
-            
-        let pyAxis = 
+      let existingTeam = [];
+      selected_rankings.forEach(function(d) {
+        existingTeam.push(d.team);
+      });
+      let lx = d3.scaleLinear()
+        .domain([1982, 2017])
+        .range([0, width]);
+      let ly = d3.scaleLinear()
+        .domain([
+          d3.min(data, d => d.rankings.win_rate),
+          d3.min(data, d => d.rankings.win_rate)
+        ])
+        .range([height, 0]);
+      let lxAxis =
+        svg_l
+        .append('g')
+        .attr('class', 'xAxis')
+        .attr('transform', translate(0, height))
+        .call(d3.axisBottom(lx).tickFormat(d3.format("d")));
+      let lyAxis =
         svg_l
         .append('g')
         .attr('class', 'yAxis')
@@ -160,58 +175,91 @@
 
     function init() {
       console.log('init');
-      d3.json("data.json").then(d=> {
+      d3.json("data.json").then(d => {
         data = d
-        data.forEach(function(d) {
+        data.forEach(function (d) {
           year_domain.push(+d.year);
         });
-      
+
+        data.forEach(function(d) {
+          d.rankings.forEach(function (dd) {
+            let team = line_data.find(ddd => ddd.team == dd.team);
+            if(team) {
+              //console.log('yesteam');
+              team.values.push(
+                {
+                  year: d.year,
+                  diff_game : dd.diff_game,
+                  win_rate : dd.win_rate
+                }
+              );
+            }
+            else {
+              //console.log('noteam');
+              let new_team = {
+                team: dd.team,
+                values : [{
+                  year: d.year,
+                  diff_game : dd.diff_game,
+                  win_rate : dd.win_rate
+                }]
+              };
+              line_data.push(new_team);
+              //console.log(line_data);
+            }           
+          });
+        });
+
         menu_year.selectAll('option')
-        .data(year_domain)
-        .enter()
-        .append('option')
-        .attr('value', d => d)
-        .text(d => d);
-        
+          .data(year_domain)
+          .enter()
+          .append('option')
+          .attr('value', d => d)
+          .text(d => d);
+
         menu_wrdg.selectAll('option')
-        .data(line_domain)
-        .enter()
-        .append('option')
-        .attr('value', d => d)
-        .text(d => d);
+          .data(line_domain)
+          .enter()
+          .append('option')
+          .attr('value', d => d)
+          .text(d => d);
 
         menu_wdl.selectAll('option')
-        .data(bar_domain)
-        .enter()
-        .append('option')
-        .attr('value', d => d)
-        .text(d => d);
-        selected_data = data[0];
-
+          .data(bar_domain)
+          .enter()
+          .append('option')
+          .attr('value', d => d)
+          .text(d => d);
+        selected_rankings = data[0].rankings;
+        selected_year = data[0].year;
         init_table();
-        draw_table(selected_data);
+        draw_table();
         draw_line();
         draw_bar();
-      
+
       });
     }
     init();
 
 
     //change event handler
-    menu_year.on('change', function(d) {
+    menu_year.on('change', function (d) {
       selected_year = menu_year.property('value');
-      console.log(selected_year);
-      selected_data = data.filter(d => d.year == selected_year);
-      console.log(selected_data);
+      //console.log(selected_year);
+      let selected_data = data.find(d => d.year == selected_year);
+      //console.log(selected_data);
+      selected_rankings = selected_data.rankings;
+      selected_year = selected_data.year;
+      draw_table();
+      
     });
 
-    menu_wrdg.on('change', function(d) {
+    menu_wrdg.on('change', function (d) {
       selected_wrdg = menu_wrdg.property('value');
       console.log(selected_wrdg);
     });
 
-    menu_wdl.on('change', function(d) {
+    menu_wdl.on('change', function (d) {
       selected_wdl = menu_wdl.property('value');
       console.log(selected_wdl);
     });
@@ -220,10 +268,7 @@
 
     }
     visualize();
-    
-
-
-        
   </script>
 </body>
+
 </html>
