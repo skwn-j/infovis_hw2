@@ -33,9 +33,9 @@
     let svgHeight = 550;
     let margin = {
       top: 30,
-      right: 30,
+      right: 20,
       bottom: 20,
-      left: 20,
+      left: 30,
       mid: 10
     };
     let width = svgWidth - margin.left - margin.right;
@@ -114,7 +114,6 @@
     }
 
     function draw_table() { 
-      console.log(selected_rankings);
       let rows = svg_t.selectAll('.row').data(selected_rankings);
       let tc = rows.enter()
         .append('g')
@@ -141,31 +140,47 @@
 
     function draw_line() {
       //console.log(line_data);
-
       let existingTeam = [];
+      let isWr = selected_wrdg == 'win_rate'? 2 : 1;
+    
       selected_rankings.forEach(function(d) {
         existingTeam.push(d.team);
       });
       let lx = d3.scaleLinear()
         .domain([1982, 2017])
         .range([0, width]);
+
       let ly = d3.scaleLinear()
         .domain([
-          d3.min(data, d => d.rankings.win_rate),
-          d3.min(data, d => d.rankings.win_rate)
+          d3.min(line_data.filter(d => existingTeam.includes(d.team)), d=> d3.min(d.values, dd=> Object.values(dd)[isWr])),
+          d3.max(line_data.filter(d => existingTeam.includes(d.team)), d=> d3.max(d.values, dd=> Object.values(dd)[isWr]))
         ])
         .range([height, 0]);
+
       let lxAxis =
         svg_l
         .append('g')
         .attr('class', 'xAxis')
         .attr('transform', translate(0, height))
         .call(d3.axisBottom(lx).tickFormat(d3.format("d")));
-      let lyAxis =
-        svg_l
-        .append('g')
-        .attr('class', 'yAxis')
-        .call(d3.axisLeft(ly));
+
+       let lyAxis =
+          svg_l
+          .append('g')
+          .attr('class', 'yAxis')
+      if(isWr==2) {
+          svg_l.select('.yAxis')
+          .call(d3.axisLeft(ly).tickFormat(d3.format(".2f")));
+      }
+      else {
+          svg_l.select('.yAxis')
+          .call(d3.axisLeft(ly).tickFormat(d3.format("d")));
+      }
+
+      let line = d3.line()
+        .x(function(d) {return x(d.year)})
+        .y(function(d) {return y(d.value)});
+      svg_l.append('path').
 
     }
 
