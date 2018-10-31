@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Infovis HW2</title>
+  <style>
+  </style>
+</head>
+
+<body>
+  <div id='title'>
+    <h1 KBO Report></h1>
+  </div>
+  <div id='menu' style='display: inline_block'>
+    <select id='menu_year' style='display:inline'> </select>
+  
+    <select id='menu_wrdg' style='display:inline'> </select>
+   
+    <select id='menu_wdl' style='display:inline'> </select>
+   
+  </div>
+  <div id='wrapper' style='display:inline_block'>
+    <div id='table' style='display:inline'></div>
+    <div id='line' style='display:inline'> </div>
+    <div id='bar' style='display:inline'> </div>
+  </div>
+
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script>
+    //default values
+    let data = [];
+    let svgWidth = 550;
+    let svgHeight = 550;
+    let margin = {
+      top: 30,
+      right: 20,
+      bottom: 20,
+      left: 30,
+      mid: 10
+    };
+    let width = svgWidth - margin.left - margin.right;
+    let height = svgHeight - margin.top - margin.bottom;
+
+    function translate(x, y) {
+      return 'translate(' + x + ',' + y + ')';
+    }
+    let teamList = [];
+
+    function colorScale(t) {
+      return d3.interpolateSinebow(t);
+    }
+    //current options
+    let selected_rankings = [];
+    let selected_year = 1982;
+    let selected_wrdg = 'WR';
+    let selected_wdl = 'W';
+
+    //initiate dropdown menu
+    let menu_year = d3.select('#menu_year');
+    let menu_wrdg = d3.select('#menu_wrdg');
+    let menu_wdl = d3.select('#menu_wdl');
+    //initialize data
+
+    let year_domain = [];
+    let line_domain = ['WR', 'DG'];
+    let bar_domain = ['W', 'D', 'L'];
+    let line_data = [];
+    //table
+    let keys = ['rank', 'team', 'W', 'D', 'L', 'win_rate', 'diff_game'];
+
+    let svg_kbo = d3.select('#title').append('text').text('KBO Report').style('font-size', '20pt').style('font-weight', 'bold');
+
+    let svg_t = d3.select('#table').append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', translate(margin.left, margin.top));
+
+
+    let svg_l = d3.select('#line')
+      .append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', translate(margin.left, margin.top));
+
+    let lx = d3.scaleLinear();
+    let ly = d3.scaleLinear();
+
+    let lxAxis =
+      svg_l
+      .append('g')
+      .attr('class', 'xAxis')
+      .attr('transform', translate(0, height));
+
+    let lyAxis =
+      svg_l
+      .append('g')
+      .attr('class', 'yAxis');
+
+
+
+
+    let svg_b = d3.select('#bar')
+      .append('svg')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .append('g')
+      .attr('transform', translate(margin.left, margin.top));
+
+    let bxAxis =
+      svg_b
+      .append('g')
+      .attr('class', 'xAxis')
+      .attr('transform', translate(0, height));
+
+    let byAxis =
+      svg_b
+      .append('g')
+      .attr('class', 'yAxis');
+
+
+
+    function init_table() {
+      let thead = svg_t.selectAll('text').append('g').data(keys).classed('thead', true);
+
+      thead.enter()
+        .append('text')
+        .text(d => d)
+        .attr('x', (d, i) => i * (svgWidth / keys.length))
+        .attr('fill', 'black')
+        .attr('text-anchor', 'middle');
+
+
+    }
+
+    function set_hovered(k) {
+     
+      d3.selectAll('.' + k.team).classed('hovered', true);
+      svg_l.selectAll('.hovered').style('stroke', d3.color(colorScale(teamList.indexOf(k.team) / teamList.length)).darker(
+        0.8)).style('stroke-width', '3');
+      svg_t.selectAll('.hovered').selectAll('text').style('font-weight', 'bold');
+      svg_b.selectAll('.hovered').style('fill', d3.color(colorScale(teamList.indexOf(k.team) / teamList.length)).darker(
+        0.8));
+
+    }
+
+    function free_hovered(k) {
+      svg_l.selectAll('.hovered').style('stroke', colorScale(teamList.indexOf(k.team) / teamList.length)).style('stroke-width', '1');;
+      svg_t.selectAll('.hovered').selectAll('text').style('font-weight', 'normal');
+      svg_b.selectAll('.hovered').style('fill', colorScale(teamList.indexOf(k.team) / teamList.length));
+      d3.selectAll('.hovered').classed('hovered', false);
+
+    }
+
+    function draw_table(delay) {
+      let rows = svg_t.selectAll('.row').data(selected_rankings, d => d.team);
+      rows.exit().remove();
+      //enter
+      let tc = rows.enter()
+        .append('g')
+        .attr('transform', (d, i) => translate(0, 40 * (i + 1)))
+        .attr('class',  d => 'row ' + d.team)
+        .on('mouseover', function (k) {
+          set_hovered(k);
+        })
+        .on('mouseleave', function (k) {
+          free_hovered(k);
+        })
+        .selectAll('text')
+        .data(k => keys.map(thiskey => [thiskey, k[thiskey]]), tuple => tuple[0]);
+       
+        
+
+      rows.transition().duration(delay)
+      .attr('transform', (d, i) => translate(0, 40 * (i + 1)));
+
+      tc.enter().append('text')
+        //.merge(tc)
+        .text(d => d[1])
+        .attr('x', (d, i) => i * (svgWidth / keys.length))
+        .attr('fill', 'black')
+        .attr('text-anchor', 'middle')
+        .style('opacity', 0)
+        .transition().duration(delay).delay(delay).style('opacity', 1);
+        
+      
+        
+      rows.transition().duration(delay)
+      .attr('transform', (d, i) => translate(0, 40 * (i + 1)));
+
+      rows.selectAll('text')
+      .data(k => keys.map(thiskey => [thiskey, k[thiskey]]), tuple => tuple[0])
+      .text(d => d[1])
+        .attr('x', (d, i) => i * (svgWidth / keys.length))
+        .attr('fill', 'black')
+        .attr('text-anchor', 'middle')
+      //tc.enter().selectAll('text').transition().duration(delay).delay(delay).style('opacity', 1);
+    }
+
+
+    function draw_line(delay) {
+      //console.log(line_data);
+      let existingTeam = [];
+      let isWr = selected_wrdg == 'WR' ? 2 : 1;
+
+      selected_rankings.forEach(function (d) {
+        existingTeam.push(d.team);
+      });
+
+
+      lx.domain([1982, 2017])
+        .range([0, width]);
+      ly.domain([
+          d3.min(line_data, d => d3.min(d.values, dd => +Object.values(dd)[isWr])),
+          d3.max(line_data, d => d3.max(d.values, dd => +Object.values(dd)[isWr]))
+        ])
+        .range([height, 0]);
+
+ 
+
+      let line = d3.line()
+        .x(function (d) {
+          return lx(+Object.values(d)[0])
+        })
+        .y(function (d) {
+          return ly(+Object.values(d)[isWr])
+        });
+
+      let target = line_data.filter(d => existingTeam.includes(d.team));
+      let lineChart = svg_l.selectAll('.line').data(target, d => d.team);
+      lineChart.exit().remove();
+
+      let new_line = lineChart.enter()
+        .append('path')
+        .attr('class', d => 'line ' +d.team)
+        .attr('d', d => line(d.values))
+        .style('stroke', d => colorScale(teamList.indexOf(d.team) / teamList.length))
+        .style('fill', 'none')
+        .style('opacity', 0)
+        .on('mouseover', function (k) {
+          set_hovered(k);
+        })
+        .on('mouseleave', function (k) {
+          free_hovered(k);
+        });
+     
+      lineChart.transition().duration(delay)
+        .attr('d', d => line(d.values))
+        .style('stroke', d => colorScale(teamList.indexOf(d.team) / teamList.length))
+        .style('fill', 'none');
+
+      new_line.transition().duration(delay).delay(delay).style('opacity', 1);
+
+      lxAxis.call(d3.axisBottom(lx).tickFormat(d3.format("d")));
+      if (isWr == 2) {
+        lyAxis.transition().duration(delay)
+          .call(d3.axisLeft(ly).tickFormat(d3.format(".2f")));
+      } else if (isWr == 1) {
+        lyAxis.transition().duration(delay)
+          .call(d3.axisLeft(ly).tickFormat(d3.format("d")));
+      }
+    }
+
+    function draw_bar(delay) {
+
+      let isWDL = 0;
+      if (selected_wdl == 'W') isWDL = 3;
+      else if (selected_wdl == 'L') isWDL = 2;
+      else if (selected_wdl == 'D') isWDL = 1;
+      let existingTeam = [];
+      selected_rankings.forEach(function (d) {
+        existingTeam.push(d.team);
+      });
+
+      let bx = d3.scaleBand()
+        .domain(existingTeam)
+        .range([0, width]);
+
+      let by = d3.scaleLinear()
+        .domain([0, d3.max(selected_rankings, d => +Object.values(d)[isWDL])])
+        .range([height, 0]);
+
+
+
+      let barChart = svg_b.selectAll('rect').data(selected_rankings, d=> d.team);
+  
+      barChart.exit().remove()
+      let new_barData = barChart.enter()
+        .append('rect')
+        .attr('class', d => d.team)
+        .attr('width', width / existingTeam.length)
+        .style('fill', d => colorScale(teamList.indexOf(d.team) / teamList.length))
+        .attr('height', d => height - by(+Object.values(d)[isWDL]))
+        .attr('x', (d, i) => (width / existingTeam.length) * i)
+        .attr('y', (d, i) => by(+Object.values(d)[isWDL]))
+        .style('opacity', 0)
+        .on('mouseover', function (k) {
+          set_hovered(k);
+        })
+        .on('mouseleave', function (k) {
+          free_hovered(k);
+        });
+
+      barChart
+        .transition().duration(delay)
+        .attr('width', width / existingTeam.length)
+        .style('fill', d => colorScale(teamList.indexOf(d.team) / teamList.length))
+        .attr('height', d => height - by(+Object.values(d)[isWDL]))
+        .attr('x', (d, i) => (width / existingTeam.length) * i)
+        .attr('y', (d, i) => by(+Object.values(d)[isWDL]));
+
+      new_barData.transition().duration(delay).delay(delay).style('opacity', 1);
+      bxAxis.transition().duration(delay).call(d3.axisBottom(bx));
+
+      byAxis.transition().duration(delay).call(d3.axisLeft(by));
+
+
+    }
+
+    function init() {
+
+      d3.json("data.json").then(d => {
+        data = d
+        //parse year domain
+        data.forEach(function (d) {
+          year_domain.push(+d.year);
+        });
+
+        //parse line data
+        data.forEach(function (d) {
+          d.rankings.forEach(function (dd) {
+            let ld = line_data.find(ddd => ddd.team == dd.team);
+
+            if (ld) {
+            
+              ld.values.push({
+                year: d.year,
+                diff_game: dd.diff_game,
+                win_rate: dd.win_rate
+              });
+            } else {
+              
+              let new_ld = {
+                team: dd.team,
+                values: [{
+                  year: d.year,
+                  diff_game: dd.diff_game,
+                  win_rate: dd.win_rate
+                }]
+              };
+              line_data.push(new_ld);
+              teamList.push(dd.team);
+             
+            }
+          });
+
+        });
+
+        menu_year.selectAll('option')
+          .data(year_domain)
+          .enter()
+          .append('option')
+          .attr('value', d => d)
+          .text(d => d);
+
+        menu_wrdg.selectAll('option')
+          .data(line_domain)
+          .enter()
+          .append('option')
+          .attr('value', d => d)
+          .text(d => d);
+
+        menu_wdl.selectAll('option')
+          .data(bar_domain)
+          .enter()
+          .append('option')
+          .attr('value', d => d)
+          .text(d => d);
+
+        selected_rankings = data[0].rankings;
+        selected_year = +data[0].year;
+        init_table();
+        draw_table(0);
+        draw_line(0);
+        draw_bar(0);
+
+      });
+    }
+    init();
+
+    //change event handler
+    menu_year.on('change', function (d) {
+      selected_year = menu_year.property('value');
+      //console.log(selected_year);
+      let selected_data = data.find(d => d.year == selected_year);
+      //console.log(selected_data);
+      selected_rankings = selected_data.rankings;
+      selected_year = +selected_data.year;
+      //console.log(selected_year);
+      draw_table(1000);
+      draw_line(1000);
+      draw_bar(1000);
+    });
+
+    menu_wrdg.on('change', function (d) {
+      selected_wrdg = menu_wrdg.property('value');
+      
+      draw_line(1000);
+    });
+
+    menu_wdl.on('change', function (d) {
+      selected_wdl = menu_wdl.property('value');
+      draw_bar(1000);
+      
+    });
+  </script>
+</body>
+
+</html>
