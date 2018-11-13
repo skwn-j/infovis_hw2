@@ -177,13 +177,13 @@
       .attr('transform', (d, i) => translate(0, 40 * (i + 1)));
 
       tc.enter().append('text')
-        //.merge(tc)
+        .merge(tc)
         .text(d => d[1])
         .attr('x', (d, i) => i * (svgWidth / keys.length))
         .attr('fill', 'black')
         .attr('text-anchor', 'middle')
         .style('opacity', 0)
-        .transition().duration(delay).delay(delay).style('opacity', 1);
+        //.transition().duration(delay).delay(delay).style('opacity', 1);
         
       
         
@@ -196,7 +196,8 @@
         .attr('x', (d, i) => i * (svgWidth / keys.length))
         .attr('fill', 'black')
         .attr('text-anchor', 'middle')
-      //tc.enter().selectAll('text').transition().duration(delay).delay(delay).style('opacity', 1);
+    
+      tc.selectAll('text').transition().duration(delay).delay(delay).style('opacity', 1);
     }
 
 
